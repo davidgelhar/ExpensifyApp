@@ -41,6 +41,9 @@ const propTypes = {
     /** Fired when submit button pressed, saves the given amount and navigates to the next page */
     onSubmitButtonPress: PropTypes.func.isRequired,
 
+    /** Fired whenever input amount changes, saves the given amount */
+    onAmountChanged: PropTypes.func.isRequired,
+
     /** The current tab we have navigated to in the request modal. String that corresponds to the request type. */
     selectedTab: PropTypes.oneOf([CONST.TAB_REQUEST.DISTANCE, CONST.TAB_REQUEST.MANUAL, CONST.TAB_REQUEST.SCAN]),
 };
@@ -74,7 +77,7 @@ const AMOUNT_VIEW_ID = 'amountView';
 const NUM_PAD_CONTAINER_VIEW_ID = 'numPadContainerView';
 const NUM_PAD_VIEW_ID = 'numPadView';
 
-function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forwardedRef, onCurrencyButtonPress, onSubmitButtonPress, selectedTab}) {
+function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forwardedRef, onCurrencyButtonPress, onSubmitButtonPress, onAmountChanged, selectedTab}) {
     const styles = useThemeStyles();
     const {isExtraSmallScreenHeight} = useWindowDimensions();
     const {translate, toLocaleDigit, numberFormat} = useLocalize();
@@ -165,10 +168,12 @@ function MoneyRequestAmountForm({amount, taxAmount, currency, isEditing, forward
                     hasSelectionBeenSet = true;
                     setSelection((prevSelection) => getNewSelection(prevSelection, isForwardDelete ? strippedAmount.length : prevAmount.length, strippedAmount.length));
                 }
+                onAmountChanged({amount: strippedAmount});
+
                 return strippedAmount;
             });
         },
-        [decimals, formError],
+        [decimals, formError, onAmountChanged],
     );
 
     // Modifies the amount to match the decimals for changed currency.

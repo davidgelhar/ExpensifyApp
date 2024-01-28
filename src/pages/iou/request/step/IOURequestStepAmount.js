@@ -98,7 +98,7 @@ function IOURequestStepAmount({
     /**
      * @param {Number} amount
      */
-    const navigateToNextPage = ({amount}) => {
+    const changeAmount = ({amount}) => {
         const amountInSmallestCurrencyUnits = CurrencyUtils.convertToBackendAmount(Number.parseFloat(amount));
 
         if ((iouRequestType === CONST.IOU.REQUEST_TYPE.MANUAL || backTo) && isTaxTrackingEnabled) {
@@ -108,6 +108,13 @@ function IOURequestStepAmount({
         }
 
         IOU.setMoneyRequestAmount_temporaryForRefactor(transactionID, amountInSmallestCurrencyUnits, currency || CONST.CURRENCY.USD);
+    }
+
+    /**
+     * @param {Number} amount
+     */
+    const navigateToNextPage = ({amount}) => {
+        changeAmount({amount})
 
         if (backTo) {
             Navigation.goBack(backTo);
@@ -143,6 +150,7 @@ function IOURequestStepAmount({
                 ref={(e) => (textInput.current = e)}
                 onCurrencyButtonPress={navigateToCurrencySelectionPage}
                 onSubmitButtonPress={navigateToNextPage}
+                onAmountChanged={changeAmount}
                 selectedTab={iouRequestType}
             />
         </StepScreenWrapper>
