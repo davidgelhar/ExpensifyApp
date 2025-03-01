@@ -1,6 +1,6 @@
 import React, {useCallback} from 'react';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
-import type {OnDragEndResponder} from 'react-beautiful-dnd';
+import type {DraggableProvidedDraggableProps, DraggableStateSnapshot, OnDragEndResponder} from 'react-beautiful-dnd';
 // eslint-disable-next-line no-restricted-imports
 import type {ScrollView as RNScrollView} from 'react-native';
 import ScrollView from '@components/ScrollView';
@@ -66,6 +66,34 @@ function DraggableList<T>(
     );
 
     /**
+     * Limit dragging to be vertical only, and don't let the item be dragged outside of the drop area. 
+     * 
+     * @param draggableProps 
+     * @param snapshot 
+     * @returns style, with update transform
+     */
+    const constrainTransformStyle = (draggableProps: DraggableProvidedDraggableProps, snapshot:DraggableStateSnapshot) => {
+        const transform = draggableProps.style?.transform;
+
+        let activeTransform = {};
+        if (transform) {
+            var y = transform.substring(
+                transform.indexOf(',') + 1,
+                transform.indexOf(')'));
+            if (!snapshot.draggingOver) {   // if outside the drop area...
+                y = '0';                    // ...snap back
+            }
+            activeTransform = {
+                transform: `translate(0, ${y})`
+            };
+        }
+        return {
+            ...draggableProps.style,
+            ...activeTransform
+        };
+    };
+
+    /**
      * The `react-beautiful-dnd` library uses `position: fixed` to move the dragged item to the top of the screen.
      * But when the parent component uses the `transform` property, the `position: fixed` doesn't work as expected.
      * Since the TabSelector component uses the `transform` property to animate the tab change
@@ -105,6 +133,9 @@ function DraggableList<T>(
                                                 {...draggableProvided.draggableProps}
                                                 // eslint-disable-next-line react/jsx-props-no-spreading
                                                 {...draggableProvided.dragHandleProps}
+                                                style={
+                                                    constrainTransformStyle(draggableProvided.draggableProps, snapshot)
+                                                }
                                             >
                                                 {renderItem({
                                                     item,
