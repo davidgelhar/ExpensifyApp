@@ -1,6 +1,5 @@
 import React, {useCallback} from 'react';
-import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
-import type {OnDragEndResponder} from 'react-beautiful-dnd';
+import {DndContext} from '@dnd-kit/core';
 // eslint-disable-next-line no-restricted-imports
 import type {ScrollView as RNScrollView} from 'react-native';
 import ScrollView from '@components/ScrollView';
