@@ -1,12 +1,27 @@
 import React, {useCallback} from 'react';
-import {DndContext} from '@dnd-kit/core';
 // eslint-disable-next-line no-restricted-imports
 import type {ScrollView as RNScrollView} from 'react-native';
 import ScrollView from '@components/ScrollView';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {DraggableListProps} from './types';
 import useDraggableInPortal from './useDraggableInPortal';
+import Droppable from './Droppable';
+import Draggable from './Draggable';
 
+import {
+    DndContext, 
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    UniqueIdentifier,
+  } from '@dnd-kit/core';
+  import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+  } from '@dnd-kit/sortable';
+  
 type ReorderParams<T> = {
     list: T[];
     startIndex: number;
@@ -46,8 +61,12 @@ function DraggableList<T>(
      * It will reorder the list and call the callback function
      * to notify the parent component about the change
      */
-    const onDragEnd: OnDragEndResponder = useCallback(
-        (result) => {
+    const onDragEnd: any = useCallback(
+        (result : any) => {
+
+            console.warn(`onDragEnd result keys = ${JSON.stringify(Object.keys(result))}`)
+            // [Warning] onDragEnd result keys = ["activatorEvent","active","collisions","delta","over"]
+
             // If user dropped the item outside of the list
             if (!result.destination) {
                 return;
@@ -64,13 +83,34 @@ function DraggableList<T>(
         [data, onDragEndCallback],
     );
 
-    /**
-     * The `react-beautiful-dnd` library uses `position: fixed` to move the dragged item to the top of the screen.
-     * But when the parent component uses the `transform` property, the `position: fixed` doesn't work as expected.
-     * Since the TabSelector component uses the `transform` property to animate the tab change
-     * we have to use portals. It is required when any of the parent components use the `transform` property.
-     */
+
     const renderDraggable = useDraggableInPortal({shouldUsePortal});
+
+    const dragItems = data.map((item, index) =>  {
+            const key = keyExtractor(item, index);
+            return <Draggable
+                id={key}
+            >
+                <div>
+                    {renderItem({
+                        item,
+                        getIndex: () => index,
+                        isActive: false,        // TODO - need to set this
+                        drag: () => {},
+                    })}
+                </div>
+             </Draggable>
+        }
+    
+    );
+    
+    const itemIds = data.map((item, index) =>  { return keyExtractor(item, index) });
+
+    const sensors = [useSensor(PointerSensor, {
+        activationConstraint: {
+          distance: 5
+        }
+      })];
 
     return (
         <ScrollView
@@ -78,49 +118,19 @@ function DraggableList<T>(
             style={styles.flex1}
             contentContainerStyle={styles.flex1}
         >
-            <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable
-                    droppableId="droppable"
-                    renderClone={renderClone}
-                >
-                    {(droppableProvided) => (
-                        <div
-                            // eslint-disable-next-line react/jsx-props-no-spreading
-                            {...droppableProvided.droppableProps}
-                            ref={droppableProvided.innerRef}
-                        >
-                            {data.map((item, index) => {
-                                const key = keyExtractor(item, index);
-                                return (
-                                    <Draggable
-                                        key={key}
-                                        draggableId={key}
-                                        index={index}
-                                    >
-                                        {renderDraggable((draggableProvided, snapshot) => (
-                                            <div
-                                                ref={draggableProvided.innerRef}
-                                                // eslint-disable-next-line react/jsx-props-no-spreading
-                                                {...draggableProvided.draggableProps}
-                                                // eslint-disable-next-line react/jsx-props-no-spreading
-                                                {...draggableProvided.dragHandleProps}
-                                            >
-                                                {renderItem({
-                                                    item,
-                                                    getIndex: () => index,
-                                                    isActive: snapshot.isDragging,
-                                                    drag: () => {},
-                                                })}
-                                            </div>
-                                        ))}
-                                    </Draggable>
-                                );
-                            })}
-                            {droppableProvided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-            </DragDropContext>
+            <DndContext 
+                onDragEnd={onDragEnd} 
+                sensors={sensors} 
+                collisionDetection={closestCenter}
+            >
+
+            <SortableContext 
+                items={itemIds}
+                strategy={verticalListSortingStrategy}
+            >
+                
+            </SortableContext>
+            </DndContext>
             {ListFooterComponent}
         </ScrollView>
     );
