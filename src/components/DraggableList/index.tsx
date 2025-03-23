@@ -19,6 +19,10 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
   } from '@dnd-kit/sortable';
+  import {
+    restrictToVerticalAxis,
+    restrictToParentElement,
+  } from '@dnd-kit/modifiers';
 import { SortableItem } from './SortableItem';
   
 type ReorderParams<T> = {
@@ -55,13 +59,8 @@ function DraggableList<T>(
     ref: React.ForwardedRef<RNScrollView>,
 ) {
     const styles = useThemeStyles();
-    /**
-     * Function to be called when the user finishes dragging an item
-     * It will reorder the list and call the callback function
-     * to notify the parent component about the change
-     */
-    const onDragEnd: any = useCallback(
-        (event: any) => {
+
+    function onDragEnd(event:any)  {
             const {active, over} = event;
 
             const oldIndex = items.indexOf(active.id);
@@ -71,25 +70,18 @@ function DraggableList<T>(
             console.warn(`onDragEnd oldIndex = ${oldIndex} newIndex = ${newIndex}`)
 
             if (active.id !== over.id) {
-                // TODO - or maybe separate items array & useState is not needed - just regenerate from 'data'?
-                setItems((items) => {
-                  return arrayMove(items, oldIndex, newIndex);
-                });
+                // // TODO - or maybe separate items array & useState is not needed - just regenerate from 'data'?
+                // setItems((items) => {
+                //   return arrayMove(items, oldIndex, newIndex);
+                // });
 
                 // TODO - use arrayMove for this too?
-                const reorderedItems = reorder({
-                    list: data,
-                    startIndex: oldIndex,
-                    endIndex: newIndex,
-                });
+                const reorderedItems = arrayMove(data, oldIndex,newIndex);
                 onDragEndCallback?.({data: reorderedItems});
             }
 
 
-        },
-        [data, onDragEndCallback],
-    );
-
+    }
 
     const renderDraggable = useDraggableInPortal({shouldUsePortal});
 
@@ -103,7 +95,7 @@ function DraggableList<T>(
                     {renderItem({
                         item,
                         getIndex: () => index,
-                        isActive: false,        // TODO - need to set this
+                        isActive: false,        // TODO - need to set this?
                         drag: () => {},
                     })}
                 </div>
@@ -112,7 +104,8 @@ function DraggableList<T>(
     
     );
     
-    const [items, setItems] = useState(data.map((item, index) =>  { return keyExtractor(item, index) }));
+    const items = data.map((item, index) =>  { return keyExtractor(item, index) });
+    console.warn(`items = ${JSON.stringify(items)}`);
 
     const sensors = [useSensor(PointerSensor, {
         activationConstraint: {
@@ -130,6 +123,7 @@ function DraggableList<T>(
                 onDragEnd={onDragEnd} 
                 sensors={sensors} 
                 collisionDetection={closestCenter}
+                modifiers={[restrictToParentElement,restrictToVerticalAxis]}
             >
 
             <SortableContext 
