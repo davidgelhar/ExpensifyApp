@@ -1,12 +1,10 @@
-import React, {useCallback} from 'react';
+import React, {useCallback,useState} from 'react';
 // eslint-disable-next-line no-restricted-imports
 import type {ScrollView as RNScrollView} from 'react-native';
 import ScrollView from '@components/ScrollView';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {DraggableListProps} from './types';
 import useDraggableInPortal from './useDraggableInPortal';
-import Droppable from './Droppable';
-import Draggable from './Draggable';
 
 import {
     DndContext, 
@@ -21,6 +19,7 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
   } from '@dnd-kit/sortable';
+import { SortableItem } from './SortableItem';
   
 type ReorderParams<T> = {
     list: T[];
@@ -62,23 +61,31 @@ function DraggableList<T>(
      * to notify the parent component about the change
      */
     const onDragEnd: any = useCallback(
-        (result : any) => {
+        (event: any) => {
+            const {active, over} = event;
 
-            console.warn(`onDragEnd result keys = ${JSON.stringify(Object.keys(result))}`)
-            // [Warning] onDragEnd result keys = ["activatorEvent","active","collisions","delta","over"]
+            const oldIndex = items.indexOf(active.id);
+            const newIndex = items.indexOf(over.id);
 
-            // If user dropped the item outside of the list
-            if (!result.destination) {
-                return;
+            console.warn(`onDragEnd active = ${active.id} over = ${over.id}`)
+            console.warn(`onDragEnd oldIndex = ${oldIndex} newIndex = ${newIndex}`)
+
+            if (active.id !== over.id) {
+                // TODO - or maybe separate items array & useState is not needed - just regenerate from 'data'?
+                setItems((items) => {
+                  return arrayMove(items, oldIndex, newIndex);
+                });
+
+                // TODO - use arrayMove for this too?
+                const reorderedItems = reorder({
+                    list: data,
+                    startIndex: oldIndex,
+                    endIndex: newIndex,
+                });
+                onDragEndCallback?.({data: reorderedItems});
             }
 
-            const reorderedItems = reorder({
-                list: data,
-                startIndex: result.source.index,
-                endIndex: result.destination.index,
-            });
 
-            onDragEndCallback?.({data: reorderedItems});
         },
         [data, onDragEndCallback],
     );
@@ -86,10 +93,11 @@ function DraggableList<T>(
 
     const renderDraggable = useDraggableInPortal({shouldUsePortal});
 
-    const dragItems = data.map((item, index) =>  {
+    const sortableItems = data.map((item, index) =>  {
             const key = keyExtractor(item, index);
-            return <Draggable
-                id={key}
+            console.warn(`sortableItems: index=${index} key = ${key}`)
+            return <SortableItem
+                id={key} key={key}
             >
                 <div>
                     {renderItem({
@@ -99,12 +107,12 @@ function DraggableList<T>(
                         drag: () => {},
                     })}
                 </div>
-             </Draggable>
+             </SortableItem>
         }
     
     );
     
-    const itemIds = data.map((item, index) =>  { return keyExtractor(item, index) });
+    const [items, setItems] = useState(data.map((item, index) =>  { return keyExtractor(item, index) }));
 
     const sensors = [useSensor(PointerSensor, {
         activationConstraint: {
@@ -125,10 +133,10 @@ function DraggableList<T>(
             >
 
             <SortableContext 
-                items={itemIds}
+                items={items}
                 strategy={verticalListSortingStrategy}
             >
-                
+                {sortableItems}
             </SortableContext>
             </DndContext>
             {ListFooterComponent}
