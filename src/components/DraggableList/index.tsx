@@ -119,20 +119,22 @@ function DraggableList<T>(
             style={styles.flex1}
             contentContainerStyle={styles.flex1}
         >
-            <DndContext 
-                onDragEnd={onDragEnd} 
-                sensors={sensors} 
-                collisionDetection={closestCenter}
-                modifiers={[restrictToParentElement,restrictToVerticalAxis]}
-            >
+            <div>
+                <DndContext 
+                    onDragEnd={onDragEnd} 
+                    sensors={sensors} 
+                    collisionDetection={closestCenter}
+                    modifiers={[restrictToParentElement,restrictToVerticalAxis]}
+                >
 
-            <SortableContext 
-                items={items}
-                strategy={verticalListSortingStrategy}
-            >
-                {sortableItems}
-            </SortableContext>
-            </DndContext>
+                <SortableContext 
+                    items={items}
+                    strategy={verticalListSortingStrategy}
+                >
+                    {sortableItems}
+                </SortableContext>
+                </DndContext>
+            </div>
             {ListFooterComponent}
         </ScrollView>
     );
