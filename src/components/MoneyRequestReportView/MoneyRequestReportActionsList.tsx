@@ -63,6 +63,7 @@ import MoneyRequestReportTransactionList from './MoneyRequestReportTransactionLi
 import MoneyRequestViewReportFields from './MoneyRequestViewReportFields';
 import ReportActionsListLoadingSkeleton from './ReportActionsListLoadingSkeleton';
 import SearchMoneyRequestReportEmptyState from './SearchMoneyRequestReportEmptyState';
+import FlatListWithScrollKey from '@components/FlatList/FlatListWithScrollKey';
 
 /**
  * In this view we are not handling the special single transaction case, we're just handling the report
@@ -631,7 +632,7 @@ function MoneyRequestReportActionsList({
                         <SearchMoneyRequestReportEmptyState />
                     </>
                 ) : (
-                    <FlatList
+                    <FlatListWithScrollKey
                         initialNumToRender={INITIAL_NUM_TO_RENDER}
                         accessibilityLabel={translate('sidebarScreen.listOfChatMessages')}
                         testID="money-request-report-actions-list"
@@ -639,6 +640,7 @@ function MoneyRequestReportActionsList({
                         data={visibleReportActions}
                         renderItem={renderItem}
                         keyExtractor={(item) => item.reportActionID}
+                        initialScrollKey={linkedReportActionID}
                         onLayout={recordTimeToMeasureItemLayout}
                         onEndReached={onEndReached}
                         onEndReachedThreshold={0.75}
